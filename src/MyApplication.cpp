@@ -3,6 +3,7 @@
 #include <Magnum/Context.h>
 #include <Magnum/Renderer.h>
 #include <Magnum/Version.h>
+#include <Magnum/Texture.h>
 #include <Magnum/Buffer.h>
 #include <Magnum/Mesh.h>
 #include <Magnum/Math/Color.h>
@@ -12,20 +13,18 @@
 #include <Magnum/Shaders/VertexColor.h>
 #include <Magnum/Shaders/Phong.h>
 #include <Magnum/Trade/MeshData3D.h>
+#include <Magnum/TextureFormat.h>
+#include <Magnum/Trade/AbstractImporter.h>
+#include <Magnum/Trade/ImageData.h>
+#include <Corrade/Containers/ArrayView.h>
+#include <Corrade/PluginManager/Manager.h>
+
+#include "TexturedTriangleShader.h"
+#include "configure.h"
 
 using namespace Magnum;
 using namespace Magnum::Math::Literals;
 
-struct TriangleVertex {
-    Vector2 position;
-    Color3 color;
-};
-
-const TriangleVertex data[] {
-    {{-0.5f, -0.5f}, 0xff0000_rgbf},
-    {{ 0.5f, -0.5f}, 0x00ff00_rgbf},
-    {{ 0.0f,  0.5f}, 0x0000ff_rgbf},
-};
 
 class MyApplication: public Platform::Application {
     public:
@@ -40,7 +39,8 @@ class MyApplication: public Platform::Application {
         Buffer _indexBuffer, _vertexBuffer, _triangleBuffer;
         Mesh _mesh, _triangleMesh;
         Shaders::Phong _shader;
-        Shaders::VertexColor2D _triangleShader;
+        TexturedTriangleShader _triangleShader;
+        Texture2D _texture;
 
         Matrix4 _transformation, _projection;
         Vector2i _previousMousePosition;
@@ -50,7 +50,21 @@ class MyApplication: public Platform::Application {
 MyApplication::MyApplication(const Arguments& arguments)
     : Platform::Application{arguments, Configuration {}.setTitle("Triangles!!1")}
 {
+    CORRADE_PLUGIN_IMPORT(TgaImporter);
+
     using namespace Magnum::Math::Literals;
+
+    struct TriangleVertex {
+        Vector2 position;
+        Vector2 textureCoordinates;
+        Color3 color;
+    };
+
+    const TriangleVertex data[] {
+        {{-0.5f, -0.5f}, {0.0f, 0.0f}, 0xff0000_rgbf},
+        {{ 0.5f, -0.5f}, {1.0f, 0.0f}, 0x00ff00_rgbf},
+        {{ 0.0f,  0.5f}, {0.5f, 1.0f}, 0x0000ff_rgbf},
+    };
 
     Debug {} << "Hello! This application is running on" << Context::current().version()
              << "using" << Context::current().rendererString();
@@ -64,8 +78,29 @@ MyApplication::MyApplication(const Arguments& arguments)
     _triangleMesh.setPrimitive(MeshPrimitive::Triangles)
         .setCount(3)
         .addVertexBuffer(_triangleBuffer, 0,
-            Shaders::VertexColor2D::Position {},
-            Shaders::VertexColor2D::Color {Shaders::VertexColor2D::Color::Components::Three});
+            TexturedTriangleShader::Position {},
+            TexturedTriangleShader::TextureCoordinates {},
+            TexturedTriangleShader::Color {TexturedTriangleShader::Color::Components::Three});
+
+    PluginManager::Manager<Trade::AbstractImporter> manager {MAGNUM_PLUGINS_IMPORTER_DIR};
+    std::unique_ptr<Trade::AbstractImporter> importer = manager.loadAndInstantiate("TgaImporter");
+    if (!importer) {
+        std::exit(1);
+    }
+
+    const Utility::Resource rs {"textured-triangle-data"};
+    if(!importer->openData(rs.getRaw("stone.tga"))) {
+        std::exit(2);
+    }
+
+    Containers::Optional<Trade::ImageData2D> image = importer->image2D(0);
+    CORRADE_INTERNAL_ASSERT(image);
+
+    _texture.setWrapping(Sampler::Wrapping::ClampToEdge)
+        .setMagnificationFilter(Sampler::Filter::Linear)
+        .setMinificationFilter(Sampler::Filter::Linear)
+        .setStorage(1, TextureFormat::RGB8, image->size())
+        .setSubImage(0, {}, *image);
 
     const Trade::MeshData3D cube = Primitives::Cube::solid();
 
@@ -103,6 +138,9 @@ void MyApplication::drawEvent() {
         .setProjectionMatrix(_projection);
 
     _mesh.draw(_shader);
+
+    //_triangleShader.setColor(0xffb2b2_rgbf)
+    _triangleShader.bindTexture(_texture);
 
     _triangleMesh.draw(_triangleShader);
 
