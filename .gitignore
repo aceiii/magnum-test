@@ -5,5 +5,19 @@ build*/
 *.kdev4
 *~
 
+lib/
+bin/
+Testing/
+
 CMakeCache.txt
 CMakeFiles/
+cmake_install.cmake
+.cmake
+.ninja_deps
+.ninja_log
+build.ninja
+
+
+# Generated
+src/configure.h
+src/resource_TexturedTriangle_RESOURCES.cpp
