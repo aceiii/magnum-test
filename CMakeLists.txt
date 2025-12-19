@@ -1,6 +1,16 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.15)
+
 project(MyApplication)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/modules/")
+find_package(SDL2 REQUIRED)
+
+set(CORRADE_WITH_UTILITY ON CACHE BOOL "" FORCE)
+add_subdirectory(external/corrade EXCLUDE_FROM_ALL)
+
+set(MAGNUM_WITH_ANYIMAGEIMPORTER ON CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_ANYSCENEIMPORTER ON CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_TGAIMPORTER ON CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_SDL2APPLICATION ON CACHE BOOL "" FORCE)
+add_subdirectory(external/magnum EXCLUDE_FROM_ALL)
 
 add_subdirectory(src)
