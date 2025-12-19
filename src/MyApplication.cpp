@@ -22,6 +22,8 @@ namespace Magnum {
     namespace Examples {
         class TexturedTriangleExample: public Platform::Application {
         public:
+            virtual ~TexturedTriangleExample() = default;
+
             explicit TexturedTriangleExample(const Arguments& arguments);
 
         private:
