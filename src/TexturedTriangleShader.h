@@ -13,6 +13,7 @@ class TexturedTriangleShader: public Magnum::GL::AbstractShaderProgram {
 public:
     typedef Magnum::GL::Attribute<0, Magnum::Vector2> Position;
     typedef Magnum::GL::Attribute<1, Magnum::Vector2> TextureCoordinates;
+    typedef Magnum::GL::Attribute<2, Magnum::Vector3> Color;
 
     explicit TexturedTriangleShader();
 

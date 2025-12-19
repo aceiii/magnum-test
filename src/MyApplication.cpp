@@ -1,19 +1,19 @@
-#include <Corrade/Containers/Containers.h>
+#include <memory>
 #include <Corrade/Containers/ArrayView.h>
+#include <Corrade/Containers/Containers.h>
 #include <Corrade/PluginManager/Manager.h>
 #include <Corrade/Utility/Resource.h>
+#include <Magnum/ImageView.h>
+#include <Magnum/PixelFormat.h>
 #include <Magnum/GL/Buffer.h>
+#include <Magnum/GL/CubeMapTexture.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Mesh.h>
 #include <Magnum/GL/Texture.h>
 #include <Magnum/GL/TextureFormat.h>
-#include <Magnum/GL/CubeMapTexture.h>
 #include <Magnum/Platform/Sdl2Application.h>
 #include <Magnum/Trade/AbstractImporter.h>
 #include <Magnum/Trade/ImageData.h>
-#include <Magnum/ImageView.h>
-#include <Magnum/PixelFormat.h>
-#include <memory>
 
 #include "TexturedTriangleShader.h"
 
@@ -39,11 +39,12 @@ namespace Magnum {
             struct TriangleVertex {
                 Vector2 position;
                 Vector2 textureCoordinates;
+                Vector3 color;
             };
-            const TriangleVertex data[]{
-                {{-0.5f, -0.5f}, {0.0f, 0.0f}}, /* Left vertex position and texture coordinate */
-                {{ 0.5f, -0.5f}, {1.0f, 0.0f}}, /* Right vertex position and texture coordinate */
-                {{ 0.0f,  0.5f}, {0.5f, 1.0f}}  /* Top vertex position and texture coordinate */
+            constexpr TriangleVertex data[]{
+                {{-0.5f, -0.5f}, {0.0f, 0.0f}, { 0.9453125f, 0.83203125f, 0.61328125f }}, /* Left vertex position and texture coordinate */
+                {{ 0.5f, -0.5f}, {1.0f, 0.0f}, { 0.8359375f, 0.91796875f, 0.921875f }}, /* Right vertex position and texture coordinate */
+                {{ 0.0f,  0.5f}, {0.5f, 1.0f}, { 0.8671875f, 0.11328125f, 0.11328125f }}  /* Top vertex position and texture coordinate */
             };
 
             _buffer.setData(data, GL::BufferUsage::StaticDraw);
@@ -51,7 +52,8 @@ namespace Magnum {
                 .setCount(3)
                 .addVertexBuffer(_buffer, 0,
                     TexturedTriangleShader::Position{},
-                    TexturedTriangleShader::TextureCoordinates{});
+                    TexturedTriangleShader::TextureCoordinates{},
+                    TexturedTriangleShader::Color{});
 
             PluginManager::Manager<Trade::AbstractImporter> manager;
             Containers::Pointer<Trade::AbstractImporter> importer = manager.loadAndInstantiate("TgaImporter");
@@ -76,9 +78,8 @@ namespace Magnum {
 
             using namespace Math::Literals;
 
-            _shader.setColor(0xffb2b2_rgbf)
+            _shader.setColor(0xffffff_rgbf)
                 .bindTexture(_texture);
-            // _mesh.draw(_shader);
             _shader.draw(_mesh);
 
             swapBuffers();
